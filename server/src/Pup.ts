@@ -23,7 +23,10 @@ class Pup {
    * Will block any request that is NOT a document or Google ReCaptcha request.
    */
   public async init() {
-    this.browser = await puppeteer.launch();
+    // Must NOT be headless for Cloudflare and Google ReCaptcha
+    this.browser = await puppeteer.launch({
+      headless: false,
+    });
     this.page = await this.browser.newPage();
     console.info("Puppeteer browser created.");
 
@@ -48,7 +51,7 @@ class Pup {
   public async load() {
     if (!this.initialised) throw InitError;
 
-    await this.page.goto("https://dev.lookmovie.ag", {
+    await this.page.goto("https://lookmovie.ag", {
       waitUntil: "networkidle2",
     });
     console.info("Navigated to lookmovie.ag.");
