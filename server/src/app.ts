@@ -1,7 +1,8 @@
 import express from "express";
+import cors from "cors";
 import { showsRoutes } from "./routes";
 
-import Pup from "./pup";
+import Pup from "./Pup";
 
 let web: Pup;
 (async () => {
@@ -12,11 +13,7 @@ let web: Pup;
 const app = express();
 
 app.use(express.json());
-app.use((req, res, next) => {
-  // CORS middleware
-  res.header("Access-Control-Allow-Origin", "*");
-  next();
-});
+app.use(cors());
 
 app.get("/api/captcha", async (req, res) => {
   try {
