@@ -10,9 +10,20 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "parcel": "^1.12.4"
+    "axios": "^0.19.2",
+    "hls.js": "^0.13.3-canary.5521",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "styled-components": "^5.1.0"
   },
   "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/hls.js": "^0.12.6",
+    "@types/react": "^16.9.34",
+    "@types/react-dom": "^16.9.6",
+    "@types/styled-components": "^5.1.0",
+    "parcel": "^1.12.4",
+    "sass": "^1.26.3",
     "typescript": "^3.8.3"
   }
 }
