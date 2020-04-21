@@ -1,0 +1,20 @@
+// @use './css-reset.scss';
+@import "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap";
+
+html {
+  --background: #fefefe;
+  --color-primary: #9980fa;
+  --color-secondary: #ffc312;
+  --text: black;
+
+  font-family: "Inter", sans-serif;
+  background-color: var(--background);
+  color: var(--text) !important;
+}
+
+.dark {
+  --background: #2c2c2c;
+  --color-primary: #ffc312;
+  --color-secondary: #9980fa;
+  --text: white;
+}

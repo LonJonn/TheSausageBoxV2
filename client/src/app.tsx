@@ -1,23 +1,35 @@
 import React from "react";
 import reactDOM from "react-dom";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 
-import Search from "./components/Search";
+import SearchPage from "./pages/Search";
+import Navbar from "./components/Navbar";
 
-import "./app.scss";
+import "./styles/app.scss";
+import "normalize.css";
 
 const appEl = document.getElementById("app");
 
 const App: React.FC = () => (
   <React.StrictMode>
-    <h1>Numbero Uno</h1>
-    <Search>
-      <Search.Input />
-      <Search.Button />
+    <Router>
+      <Navbar>
+        <Navbar.Title>The Box</Navbar.Title>
+        <Navbar.Items>
+          <Navbar.Link to="/search">Search</Navbar.Link>
+          <Navbar.Link to="/second">Link 2</Navbar.Link>
+        </Navbar.Items>
+        <Navbar.Items end>
+          <Navbar.Link to="/about">About</Navbar.Link>
+        </Navbar.Items>
+      </Navbar>
 
-      <br />
-      <h2>Results</h2>
-      <Search.Results />
-    </Search>
+      <main>
+        <Switch>
+          <Route path="/search" component={SearchPage} />
+        </Switch>
+      </main>
+    </Router>
   </React.StrictMode>
 );
 
