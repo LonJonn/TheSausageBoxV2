@@ -1,5 +1,6 @@
 import express from "express";
 import fetch from "node-fetch";
+import { captchaMw, ICaptchaReq } from "../middleware";
 
 const router = express.Router();
 
@@ -54,11 +55,6 @@ router.get("/seasons/:slug", async (req, res) => {
  * Authenticate for a show.
  * Show slug and Google ReCaptcha token required as query params.
  */
-interface IAuthBody {
-  slug: string;
-  captchaToken: string;
-}
-
 interface IAuthResponse {
   success: boolean;
   data: {
@@ -68,18 +64,27 @@ interface IAuthResponse {
 }
 
 const authUrl = "https://false-promise.lookmovie.ag/api/v1/storage/shows/";
-router.post("/auth", async (req, res) => {
-  const { slug, captchaToken } = req.body as IAuthBody;
-  const queryString = `?slug=${slug}&token=${captchaToken}&sk=null&step=1`;
+router.get("/auth/:slug", captchaMw, async (req: ICaptchaReq, res) => {
+  const { slug } = req.params;
 
-  const authRes = await fetch(authUrl + queryString);
+  async function getAuth(token: string) {
+    let queryString = `?slug=${slug}&token=${token}&sk=null&step=1`;
 
-  if (!authRes.ok)
-    return res
-      .status(authRes.status)
-      .json("Something went wrong: " + authRes.statusText);
+    let authRes = await fetch(authUrl + queryString);
+    if (!authRes.ok)
+      res
+        .status(authRes.status)
+        .json("Something went wrong: " + authRes.statusText);
 
-  const auth = (await authRes.json()) as IAuthResponse;
+    return (await authRes.json()) as IAuthResponse;
+  }
+
+  let auth = await getAuth(req.web!.token);
+  if (!auth.success) {
+    req.web?.refreshToken();
+    auth = await getAuth(req.web!.token);
+  }
+
   if (!auth.success) return res.status(503).json("Auth failed.");
 
   res.json(auth);

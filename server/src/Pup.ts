@@ -10,12 +10,14 @@ class Pup {
   private browser!: puppeteer.Browser;
   private page!: puppeteer.Page;
   private initialised: boolean;
+  private _token: string;
 
   /**
    * Must call `.init()` before this Object can be used!
    */
   constructor() {
     this.initialised = false;
+    this._token = "";
   }
 
   /**
@@ -60,7 +62,7 @@ class Pup {
   /**
    * Generates new Google ReCaptcha token for lookmovie.ag.
    */
-  public async getNewToken() {
+  public async refreshToken() {
     if (!this.initialised) throw InitError;
     if (!this.page.url().includes("lookmovie")) throw PageError;
 
@@ -71,7 +73,14 @@ class Pup {
         .then((token: string) => token)
     );
 
-    return token;
+    this._token = token;
+  }
+
+  /**
+   * Getter for last token.
+   */
+  get token() {
+    return this._token;
   }
 }
 
