@@ -19,7 +19,7 @@ const App: React.FC = () => (
           <Navbar.Link to="/search">Search</Navbar.Link>
           <Navbar.Link to="/second">Link 2</Navbar.Link>
         </Navbar.Items>
-        <Navbar.Items end>
+        <Navbar.Items end="true">
           <Navbar.Link to="/about">About</Navbar.Link>
         </Navbar.Items>
       </Navbar>

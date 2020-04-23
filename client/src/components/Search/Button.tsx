@@ -1,5 +1,4 @@
-import React, { useContext } from "react";
-import { searchContext } from ".";
+import React from "react";
 import styled from "styled-components";
 
 const StyledButton = styled.button`
@@ -8,7 +7,5 @@ const StyledButton = styled.button`
 `;
 
 export const Button: React.FC = () => {
-  const { submitSearch } = useContext(searchContext);
-
-  return <StyledButton onClick={submitSearch}>Search</StyledButton>;
+  return <StyledButton type="submit">Search</StyledButton>;
 };

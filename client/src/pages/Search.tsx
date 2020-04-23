@@ -11,7 +11,7 @@ const SearchPage: React.FC = () => {
 
         <br />
         <h2>Results</h2>
-        <Search.Results />
+        <Search.ResultsList />
       </Search>
     </React.Fragment>
   );

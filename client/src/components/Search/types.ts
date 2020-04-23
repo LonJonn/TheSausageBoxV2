@@ -2,20 +2,30 @@
 export interface IAppSearch extends React.FC {
   Input: React.FC;
   Button: React.FC;
-  Results: React.FC;
-}
-
-// Search Result
-export interface IResult {
-  name: string;
-  slug: string;
-  id: number;
+  ResultsList: React.FC;
 }
 
 // Search Context
-export interface IContext {
+export interface ISearchContext {
+  loading: boolean;
   query: string;
   setQuery: React.Dispatch<React.SetStateAction<string>>;
-  submitSearch: () => void;
-  results: IResult[];
+  total: number;
+  results: ISearchResult[];
+}
+
+// Search Results
+export interface ISearchResult {
+  slug: string;
+  title: string;
+  description: string;
+  duration: string;
+  year: string;
+  poster: string;
+  backdrop: string;
+}
+
+export interface ISearchResponse {
+  total: number;
+  result: ISearchResult[];
 }
