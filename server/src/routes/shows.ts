@@ -1,6 +1,6 @@
 import express from "express";
 import fetch from "node-fetch";
-import { captchaMw, ICaptchaReq } from "../middleware";
+import Auther, { IAuthResponse } from "../Auther";
 
 const router = express.Router();
 
@@ -55,39 +55,20 @@ router.get("/seasons/:slug", async (req, res) => {
  * Authenticate for a show.
  * Show slug and Google ReCaptcha token required as query params.
  */
-interface IAuthResponse {
-  success: boolean;
-  data: {
-    expires: number;
-    accessToken: string;
-  };
-}
-
-const authUrl = "https://false-promise.lookmovie.ag/api/v1/storage/shows/";
-router.get("/auth/:slug", captchaMw, async (req: ICaptchaReq, res) => {
+router.get("/auth/:slug", async (req, res) => {
   const { slug } = req.params;
+  const auther = new Auther();
 
-  async function getAuth(token: string) {
-    let queryString = `?slug=${slug}&token=${token}&sk=null&step=1`;
+  auther.slug = slug;
+  await auther.sendCaptcha();
+  await auther.waitForResult();
 
-    let authRes = await fetch(authUrl + queryString);
-    if (!authRes.ok)
-      res
-        .status(authRes.status)
-        .json("Something went wrong: " + authRes.statusText);
-
-    return (await authRes.json()) as IAuthResponse;
+  try {
+    const auth = await auther.auth();
+    res.json(auth);
+  } catch (error) {
+    res.status(401).json("Auth failed.");
   }
-
-  let auth = await getAuth(req.web!.token);
-  if (!auth.success) {
-    req.web?.refreshToken();
-    auth = await getAuth(req.web!.token);
-  }
-
-  if (!auth.success) return res.status(503).json("Auth failed.");
-
-  res.json(auth);
 });
 
 /**
@@ -106,7 +87,7 @@ interface IMasterResponse {
 
 router.post("/episode/:id", async (req, res) => {
   const { auth } = req.body as IQualityBody;
-  const { accessToken, expires } = auth.data;
+  const { accessToken, expires } = auth;
   const { id: episodeId } = req.params;
 
   const masterUrl = `https://dev.lookmovie.ag/manifests/shows/json/${accessToken}/${expires}/${episodeId}/master.m3u8`;
@@ -118,58 +99,6 @@ router.post("/episode/:id", async (req, res) => {
   const qualities = (await masterRes.json()) as IMasterResponse;
 
   res.json(qualities);
-});
-
-/**
- * ########################
- * !!__MAYBE NOT NEEDED__!!
- * #######################
- */
-/**
- * Get the index.m3u8 file for an episode.
- * Episode ID and Auth Access Token and Expiry required from /auth.
- */
-interface IIndexBody {
-  indexUrl: string;
-  auth: IAuthResponse;
-}
-
-router.post("/:id/index", async (req, res) => {
-  const { auth } = req.body as IIndexBody;
-  const { accessToken, expires } = auth.data;
-  const { id: episodeId } = req.params;
-
-  // Create master.m3u8 URL and fetch file
-  // const masterUrl = `https://dev.lookmovie.ag/manifests/shows/json/${auth.data.accessToken}/${auth.data.expires}/${episodeId}/master.m3u8`;
-  // const masterFileRes = await fetch(masterUrl);
-  // if (!masterFileRes.ok)
-  //   return res
-  //     .status(masterFileRes.status)
-  //     .json("Something went wrong: " + masterFileRes.statusText);
-  // const masterFileText = await masterFileRes.text();
-
-  // Create master.m3u8 URL and fetch episode quality links
-  const masterUrl = `https://dev.lookmovie.ag/manifests/shows/json/${accessToken}/${expires}/${episodeId}/master.m3u8`;
-  const masterRes = await fetch(masterUrl);
-  if (!masterRes.ok)
-    return res
-      .status(masterRes.status)
-      .json("Something went wrong: " + masterRes.statusText);
-  const masterData = (await masterRes.json()) as IMasterResponse;
-
-  // Get index.m3u8 URL from master.m3u8 file
-  const bestQualityUrl =
-    masterData["1080"] || masterData["720"] || masterData["480"];
-  if (!bestQualityUrl)
-    return res.status(404).json("Can't find any links for episode.");
-  const indexFileRes = await fetch(bestQualityUrl);
-  if (!indexFileRes.ok)
-    return res
-      .status(indexFileRes.status)
-      .json("Something went wrong: " + indexFileRes.statusText);
-  const indexBuffer = await indexFileRes.buffer();
-
-  res.header("Content-Type", "application/vnd.apple.mpegurl").end(indexBuffer);
 });
 
 export default router;
