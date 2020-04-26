@@ -11,8 +11,7 @@ const router = express.Router();
 const searchUrl = "https://dev.lookmovie.ag/api/v1/shows/search/?q=";
 router.get("/search", async (req, res) => {
   const { query: searchQuery } = req.query;
-  if (!searchQuery)
-    return res.status(400).send({ error: "No search query provided." });
+  if (!searchQuery) return res.status(400).json("No search query provided.");
 
   const searchRes = await fetch(searchUrl + searchQuery);
 

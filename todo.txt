@@ -1,0 +1,6 @@
+$ 404 Page (Proper routing)
+# Code splitting (Load pages and components asynchronously)
+# Animations
+# Movies
+# Subtitles
+# Get bigger list of shows and movies (from lookmovies index php)

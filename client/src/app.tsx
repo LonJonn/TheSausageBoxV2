@@ -7,8 +7,13 @@ import Navbar from "./components/Navbar";
 
 import "./styles/app.scss";
 import "normalize.css";
+import styled from "styled-components";
 
 const appEl = document.getElementById("app");
+
+const Container = styled.main`
+  padding: 2rem 1.5rem 0;
+`;
 
 const App: React.FC = () => (
   <React.StrictMode>
@@ -19,16 +24,16 @@ const App: React.FC = () => (
           <Navbar.Link to="/search">Search</Navbar.Link>
           <Navbar.Link to="/second">Link 2</Navbar.Link>
         </Navbar.Items>
-        <Navbar.Items end>
+        <Navbar.Items end="true">
           <Navbar.Link to="/about">About</Navbar.Link>
         </Navbar.Items>
       </Navbar>
 
-      <main>
+      <Container>
         <Switch>
           <Route path="/search" component={SearchPage} />
         </Switch>
-      </main>
+      </Container>
     </Router>
   </React.StrictMode>
 );

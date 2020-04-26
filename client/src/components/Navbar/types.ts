@@ -10,5 +10,5 @@ export interface IAppNavbar extends React.FC {
 }
 
 export interface IItemsListProps {
-  end?: boolean;
+  end?: "true" | "false";
 }
