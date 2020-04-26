@@ -1,23 +1,90 @@
 import React, { useContext } from "react";
 import { searchContext } from ".";
 import { ISearchResult } from "./types";
+import { Link } from "react-router-dom";
+import styled from "styled-components";
 
 /**
  * Individual Search Item
  */
+const PreviewContainer = styled.div`
+  max-width: 20%;
+  background-color: var(--surface);
+  border-radius: 0.35rem;
+  overflow: hidden;
+  margin-right: 1rem;
+
+  * {
+    text-decoration: none;
+  }
+`;
+const PreviewImage = styled.img`
+  width: 100%;
+`;
+
+const PreviewContent = styled.div`
+  padding: 1rem;
+`;
+
+const PreviewTitle = styled.h1`
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text);
+
+  .slug {
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+`;
+
+const PreviewText = styled.p`
+  margin: 0;
+  color: var(--text-secondary);
+
+  p {
+    margin: 0 0 0.5rem;
+  }
+
+  b {
+    font-weight: 500;
+  }
+`;
+
 interface IPreviewProps {
   result: ISearchResult;
 }
 const Preview: React.FC<IPreviewProps> = ({ result }) => {
   return (
-    <div>
-      <h1>{result.title}</h1>
-      <p>{result.slug}</p>
-      <p>{result.year}</p>
-      <img src={`https://image.tmdb.org/t/p/w500/${result.backdrop}`} />
-    </div>
+    <PreviewContainer>
+      <Link to={`/shows/${result.slug}`}>
+        <PreviewImage
+          src={`https://image.tmdb.org/t/p/w500/${result.backdrop}`}
+        />
+        <PreviewContent>
+          <PreviewTitle>
+            {result.title}
+            <p className="slug">{result.slug}</p>
+          </PreviewTitle>
+          <PreviewText>
+            <p>
+              <b>Released:</b> {result.year}
+            </p>
+            <p>
+              <b>Duration:</b> {result.duration}
+            </p>
+          </PreviewText>
+        </PreviewContent>
+      </Link>
+    </PreviewContainer>
   );
 };
+
+const ResultsContainer = styled.div`
+  display: flex;
+`;
 
 /**
  * List
@@ -38,9 +105,11 @@ export const ResultsList: React.FC = () => {
   return (
     <div>
       <p>{total} result(s) found</p>
-      {results.map((result, idx) => (
-        <Preview result={result} key={idx} />
-      ))}
+      <ResultsContainer>
+        {results.map((result, idx) => (
+          <Preview result={result} key={idx} />
+        ))}
+      </ResultsContainer>
     </div>
   );
 };
