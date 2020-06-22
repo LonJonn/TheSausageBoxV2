@@ -59,7 +59,7 @@ interface IPreviewProps {
 const Preview: React.FC<IPreviewProps> = ({ result }) => {
   return (
     <PreviewContainer>
-      <Link to={`/shows/${result.slug}`}>
+      <Link to={`/show/${result.slug}`}>
         <PreviewImage
           src={`https://image.tmdb.org/t/p/w500/${result.backdrop}`}
         />

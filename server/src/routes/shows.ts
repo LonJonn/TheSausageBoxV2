@@ -47,7 +47,17 @@ router.get("/seasons/:slug", async (req, res) => {
       .replace(/[\r\n\\]/g, "")
   );
 
-  res.json(seasons);
+  const seasonsClean = Object.values<any>(seasons).reduce((acc, season) => {
+    const newObj: any = {};
+
+    newObj.meta = season.meta;
+    newObj.episodes = Object.values(season.episodes);
+
+    acc.push(newObj);
+    return acc;
+  }, []);
+
+  res.json(seasonsClean);
 });
 
 /**

@@ -3,6 +3,7 @@ import reactDOM from "react-dom";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 
 import SearchPage from "./pages/Search";
+import DetailsPage from "./pages/Details";
 import Navbar from "./components/Navbar";
 
 import "./styles/app.scss";
@@ -32,6 +33,7 @@ const App: React.FC = () => (
       <Container>
         <Switch>
           <Route path="/search" component={SearchPage} />
+          <Route path="/show/:slug" component={DetailsPage} />
         </Switch>
       </Container>
     </Router>
