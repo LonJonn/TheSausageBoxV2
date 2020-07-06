@@ -53,6 +53,11 @@ class Pup {
       slowMo: 20,
     });
     this.mainPage = await this.browser.newPage();
+
+    // Repeat random search every hour
+    await this.randomSearch();
+    setInterval(this.randomSearch, 60 * 60 * 1000);
+
     this.initialised = true;
 
     console.info("Puppeteer browser created.");
@@ -127,7 +132,7 @@ class Pup {
 
     let access = (await res.json()) as AuthResponse;
 
-    // If Auth Failedm try to solve catpcha
+    // If Auth Failed try to solve catpcha
     if (!access.success) {
       console.log("First auth failed. Trying to solve captcha.");
 
