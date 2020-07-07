@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import puppeteer, { ResourceType } from "puppeteer";
 import puppeteerExtra from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import RecaptchaPlugin from "puppeteer-extra-plugin-recaptcha";
@@ -11,69 +11,85 @@ puppeteerExtra
     RecaptchaPlugin({
       provider: {
         id: "2captcha",
-        token: process.env["API_KEY"],
+        token: process.env.API_KEY,
       },
     })
   );
 
 export type AuthResponse = {
   success: boolean;
-  data: {
-    expires: number;
+  data?: {
+    expires: number; // In UNIX timestamp format
     accessToken: string;
   };
 };
 
-// Errors
-const InitError = new Error("Must initilize Pup object first using .init()");
-const PageError = new Error(
-  "Must navigate to lookmovie.ag first using .load()"
-);
+type TokenMap = {
+  [slug: string]: Required<AuthResponse>;
+};
 
 class Pup {
   private browser!: puppeteer.Browser;
   private mainPage!: puppeteer.Page;
-  private initialised: boolean;
-  private tokenHistory: { [slug: string]: AuthResponse };
-
-  /**
-   * Must call `.init()` before this Object can be used!
-   */
-  constructor() {
-    this.initialised = false;
-    this.tokenHistory = {};
-  }
+  private tokenHistory: TokenMap = {};
 
   /**
    * Creates a headless browser and page.
    */
-  public async init() {
+  public async init(): Promise<void> {
     this.browser = await puppeteerExtra.launch({
       headless: false,
       slowMo: 20,
     });
     this.mainPage = await this.browser.newPage();
 
-    // Repeat random search every hour
+    console.log("Puppeteer browser created. 👍");
+
+    /**
+     * Repeat random search each hour
+     */
+
     await this.randomSearch();
-    setInterval(this.randomSearch, 60 * 60 * 1000);
+    setInterval(() => {
+      this.randomSearch();
+    }, 60 * 60 * 1000);
 
-    this.initialised = true;
+    /**
+     * Intercept and filter requests
+     */
 
-    console.info("Puppeteer browser created.");
-  }
+    await this.mainPage.setRequestInterception(true);
 
-  /**
-   * Navigates to Lookmovie.ag.
-   */
-  public async load() {
-    if (!this.initialised) throw InitError;
+    const whitelist: string[] = ["captcha", "false-promise"];
+    const resourceTypes: ResourceType[] = ["document", "script"];
+    const blacklist: string[] = [
+      "adskeeper",
+      "yandex",
+      "inpagepush",
+      "metrika",
+      "mopnixhem",
+      "opsoomet",
+    ];
+
+    this.mainPage.on("request", (req) => {
+      if (
+        whitelist.some((item) => req.url().includes(item)) ||
+        (resourceTypes.includes(req.resourceType()) &&
+          !blacklist.some((item) => req.url().includes(item)))
+      )
+        req.continue();
+      else req.abort();
+    });
+
+    /**
+     * Navigate to lookmovie 😙
+     */
 
     await this.mainPage.goto("https://lookmovie.ag", {
       waitUntil: "networkidle2",
     });
 
-    console.info("Navigated to lookmovie.ag.");
+    console.log("Pup ready! 😊");
   }
 
   /**
@@ -81,77 +97,87 @@ class Pup {
    *
    * @param slug Slug of Show or movie
    */
-  public async getNewToken(slug: string) {
-    if (!this.initialised) throw InitError;
-    if (!this.mainPage.url().includes("lookmovie")) throw PageError;
+  public async getNewToken(slug: string): Promise<AuthResponse> {
+    const cursor = createCursor(this.mainPage as any);
 
     /**
      * Navigating to page
      */
 
-    // Create ghost cursor
-    const cursor = createCursor(this.mainPage as any);
-
     // Fake scroll
-    await this.mainPage.waitFor(1250);
-    await this.mainPage.evaluate(() => {
-      window.scrollBy({ top: 220, left: 0, behavior: "smooth" });
-    });
-    await this.mainPage.waitFor(550);
     await this.mainPage.evaluate(() => {
       window.scrollBy({ top: -520, left: 0, behavior: "smooth" });
     });
 
     // Move to search bar
-    await cursor.move("#search_input");
+    if (await this.mainPage.$("#search_input")) {
+      await cursor.move("#search_input");
+    }
 
-    await this.mainPage.goto(`https://lookmovie.ag/shows/view/${slug}`, {
-      waitUntil: "networkidle2",
-    });
+    // Try to go to show page
+    const navRes = await this.mainPage.goto(
+      `https://lookmovie.ag/shows/view/${slug}`,
+      { waitUntil: "networkidle2" }
+    );
+
+    // If show not found, return false auth
+    if (navRes?.status() === 404) {
+      const access: AuthResponse = {
+        success: false,
+      };
+
+      return access;
+    }
 
     /**
      * Getting Token
      */
 
-    console.info("Generating new Google ReCaptcha token.");
+    console.log("Trying to generate new auth token:", slug, "😖🙏");
 
     // Fake scroll
-    await this.mainPage.waitFor(1250);
+    await this.mainPage.waitFor(550);
     await this.mainPage.evaluate(() => {
       window.scrollBy({ top: 220, left: 0, behavior: "smooth" });
     });
 
     // Click play button
-    await cursor.click(".thumbnail-play__btn-big");
+    await cursor.move(".thumbnail-play__btn-big");
+    await this.mainPage.click(".thumbnail-play__btn-big");
 
     // Wait for Auth Response
-    console.log("Waiting for auth response...");
-    const res = await this.mainPage.waitForResponse((res) =>
+    const authRes = await this.mainPage.waitForResponse((res) =>
       res.url().includes("false-promise")
     );
 
-    let access = (await res.json()) as AuthResponse;
+    let access: AuthResponse = (await authRes.json()) as AuthResponse;
 
     // If Auth Failed try to solve catpcha
     if (!access.success) {
-      console.log("First auth failed. Trying to solve captcha.");
+      console.log("First auth failed. 😢 Trying to solve captcha.");
 
       let { captchas } = await this.mainPage.findRecaptchas();
       captchas.pop(); // We don't want to solve "contact us" captcha
       let { solutions } = await this.mainPage.getRecaptchaSolutions(captchas);
       await this.mainPage.enterRecaptchaSolutions(solutions);
 
-      console.log("Finished Solving Captcha.");
+      console.log("Finished Solving Captcha. 😎");
 
-      const res = await this.mainPage.waitForResponse((res) =>
+      const authRes = await this.mainPage.waitForResponse((res) =>
         res.url().includes("false-promise")
       );
 
-      access = (await res.json()) as any;
+      access = (await authRes.json()) as AuthResponse;
     }
 
     if (access.success) {
-      this.tokenHistory[slug] = access;
+      console.log(
+        "%cAuth successful! Adding to history. 😙",
+        "color: lightgreen;"
+      );
+      console.log("Token will expire @", new Date(access.data!.expires * 1000));
+
+      this.tokenHistory[slug] = access as Required<AuthResponse>;
     }
 
     return access;
@@ -160,7 +186,7 @@ class Pup {
   /**
    * Navigates to a random website to appear more human like.
    */
-  public async randomSearch() {
+  public async randomSearch(): Promise<void> {
     const keywords = [
       "league of legends reddit",
       "youtube",
@@ -168,6 +194,12 @@ class Pup {
       "reddit",
     ];
     const randomSearch = keywords[Math.floor(Math.random() * keywords.length)];
+
+    console.log(
+      "%cPerforming random search @",
+      "color: hotpink;",
+      new Date().toString()
+    );
 
     const page = await this.browser.newPage();
     const cursor = createCursor(page);
@@ -211,7 +243,7 @@ class Pup {
    *
    * @param slug Slug of show or movie
    */
-  public getExisitingAuth(slug: string) {
+  public getExisitingAuth(slug: string): Required<AuthResponse> | null {
     const exisitingToken = this.tokenHistory[slug];
 
     if (!exisitingToken) {

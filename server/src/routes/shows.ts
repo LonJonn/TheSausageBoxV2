@@ -8,17 +8,21 @@ const router = express.Router();
  * Search for a show and retrieve data.
  * Used to find the slug of a show.
  */
-const searchUrl = "https://lookmovie.ag/api/v1/shows/search/?q=";
 router.get("/search", async (req, res) => {
   const { query: searchQuery } = req.query;
-  if (!searchQuery) return res.status(400).json("No search query provided.");
+  if (!searchQuery) {
+    return res.status(400).json("No search query provided.");
+  }
 
-  const searchRes = await fetch(searchUrl + searchQuery);
+  const searchRes = await fetch(
+    `https://lookmovie.ag/api/v1/shows/search/?q=${searchQuery}`
+  );
 
-  if (!searchRes.ok)
+  if (!searchRes.ok) {
     return res
       .status(searchRes.status)
       .json("Something went wrong: " + searchRes.statusText);
+  }
 
   const data = await searchRes.json();
   res.json(data);
@@ -27,16 +31,16 @@ router.get("/search", async (req, res) => {
 /**
  * Get the shows seasons as a JSON object.
  */
-const pageUrl = "https://lookmovie.ag/shows/view/";
 router.get("/seasons/:slug", async (req, res) => {
   const { slug } = req.params;
 
-  const pageRes = await fetch(pageUrl + slug);
+  const pageRes = await fetch(`https://lookmovie.ag/shows/view/${slug}`);
 
-  if (!pageRes.ok)
+  if (!pageRes.ok) {
     return res
       .status(pageRes.status)
       .json("Something went wrong: " + pageRes.statusText);
+  }
 
   const html = await pageRes.text();
 
@@ -59,7 +63,9 @@ router.get("/auth/:slug", async (req, res) => {
 
   // If valid auth for this show already exists, use it
   const existingAuth = Pup.getExisitingAuth(slug);
-  if (existingAuth) return res.json(existingAuth.data);
+  if (existingAuth) {
+    return res.json(existingAuth.data);
+  }
 
   // Otherwise get new auth
   const auth = await Pup.getNewToken(slug);
@@ -81,16 +87,20 @@ type Qualities = {
  * Auth Access Token and Expiry required from /auth.
  */
 router.post("/episode/:id", async (req, res) => {
-  const { data: auth } = req.body as AuthResponse;
-  const { accessToken, expires } = auth;
+  const { data } = req.body as AuthResponse;
+  const { accessToken, expires } = data!;
   const { id } = req.params;
 
-  const masterUrl = `https://lookmovie.ag/manifests/shows/json/${accessToken}/${expires}/${id}/master.m3u8`;
-  const masterRes = await fetch(masterUrl);
-  if (!masterRes.ok)
+  const masterRes = await fetch(
+    `https://lookmovie.ag/manifests/shows/json/${accessToken}/${expires}/${id}/master.m3u8`
+  );
+
+  if (!masterRes.ok) {
     return res
       .status(masterRes.status)
       .json("Something went wrong: " + masterRes.statusText);
+  }
+
   const qualities = (await masterRes.json()) as Qualities;
 
   res.json(qualities);
