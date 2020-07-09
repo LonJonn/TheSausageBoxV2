@@ -184,6 +184,27 @@ class Pup {
   }
 
   /**
+   * Return existing auth if it's still valid.
+   *
+   * @param slug Slug of show or movie
+   */
+  public getExisitingAuth(slug: string): Required<AuthResponse> | null {
+    const exisitingToken = this.tokenHistory[slug];
+
+    if (!exisitingToken) {
+      return null;
+    }
+
+    const expireTime = new Date(exisitingToken.data.expires * 1000);
+    if (expireTime.getTime() - new Date().getTime() < 0) {
+      delete this.tokenHistory[slug];
+      return null;
+    }
+
+    return this.tokenHistory[slug];
+  }
+
+  /**
    * Navigates to a random website to appear more human like.
    */
   public async randomSearch(): Promise<void> {
@@ -239,24 +260,53 @@ class Pup {
   }
 
   /**
-   * Return existing auth if it's still valid.
-   *
-   * @param slug Slug of show or movie
+   * Watches a random video on youtube.
+   * Not used yet, but might be needed to appear more human like.
    */
-  public getExisitingAuth(slug: string): Required<AuthResponse> | null {
-    const exisitingToken = this.tokenHistory[slug];
+  public async randomYoutube(): Promise<void> {
+    const page = await this.browser.newPage();
+    const cursor = createCursor(page);
 
-    if (!exisitingToken) {
-      return null;
-    }
+    await page.goto("https://youtube.com", { waitUntil: "networkidle2" });
+    await page.waitFor(500);
 
-    const expireTime = new Date(exisitingToken.data.expires * 1000);
-    if (expireTime.getTime() - new Date().getTime() < 0) {
-      delete this.tokenHistory[slug];
-      return null;
-    }
+    // Play first video
+    await cursor.click("#primary ytd-thumbnail");
 
-    return this.tokenHistory[slug];
+    // Try to skip video
+    try {
+      await page.waitForSelector(".ytp-ad-skip-button");
+      await cursor.click(".ytp-ad-skip-button");
+    } catch (error) {}
+
+    await page.waitFor(10 * 60 * 1000);
+
+    // Fake scroll
+    await page.evaluate(() => {
+      window.scrollBy({ top: 520, left: 0, behavior: "smooth" });
+    });
+    await page.waitFor(1000);
+
+    await page.evaluate(() => {
+      window.scrollBy({ top: 320, left: 0, behavior: "smooth" });
+    });
+    await page.waitFor(6000);
+
+    // Go home
+    await cursor.click("#logo-icon-container");
+
+    // Fake scroll again
+    await page.evaluate(() => {
+      window.scrollBy({ top: 520, left: 0, behavior: "smooth" });
+    });
+    await page.waitFor(1000);
+
+    await page.evaluate(() => {
+      window.scrollBy({ top: 320, left: 0, behavior: "smooth" });
+    });
+    await page.waitFor(10000);
+
+    await page.close();
   }
 }
 
