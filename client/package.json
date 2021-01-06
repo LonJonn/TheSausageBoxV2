@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "hls.js": "^0.13.3-canary.5521",
     "normalize.css": "^8.0.1",
     "react": "^16.13.1",
