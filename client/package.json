@@ -24,7 +24,7 @@
     "@types/react-dom": "^16.9.6",
     "@types/react-router-dom": "^5.1.4",
     "@types/styled-components": "^5.1.0",
-    "parcel": "^1.12.4",
+    "parcel": "^2.8.2",
     "sass": "^1.26.3",
     "typescript": "^3.8.3"
   }
